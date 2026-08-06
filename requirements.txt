@@ -2,3 +2,4 @@ streamlit
 pandas
 pyspark
 opencv-python-headless
+ultralytics
