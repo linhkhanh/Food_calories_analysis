@@ -208,7 +208,9 @@ with tab_batch:
 
         def run_pipeline():
             global process_complete
-            subprocess.run([sys.executable, "pipeline.py"])
+            # Pass the selected model as a command-line argument
+            print(f"--- INFO: Running pipeline.py with model '{selected_model}' ---")
+            subprocess.run([sys.executable, "pipeline.py", "--model", selected_model])
             process_complete = True
 
         thread = threading.Thread(target=run_pipeline)
@@ -314,4 +316,4 @@ with tab_batch:
         else:
             st.info("Database is empty. Run the PySpark pipeline above to populate data.")
     else:
-        st.info("No database found yet. Upload an image in the sidebar and click 'Run PySpark Batch Pipeline' above.")
+        st.info("No database found yet. Click 'Run PySpark Batch Pipeline' above.")

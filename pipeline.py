@@ -1,6 +1,9 @@
 import sqlite3
 import os
 import sys
+import argparse
+from functools import partial
+
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
@@ -9,14 +12,23 @@ from pyspark.sql.functions import udf, explode, from_json, col
 from pyspark.sql.types import StringType, StructType, StructField, FloatType, ArrayType
 from service.model_service import process_single_image
 
+# 1. Parse command line arguments passed from app.py
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", type=str, default="best_1", help="Model name to use")
+args = parser.parse_args()
+SELECTED_MODEL = args.model
+
 # Initialize PySpark Session
 spark = SparkSession.builder \
     .appName("FoodNutritionPipeline") \
     .config("spark.master", "local[*]") \
     .getOrCreate()
 
-# Define User Defined Function (UDF) for image processing
-run_ml_udf = udf(process_single_image, StringType())
+# 2. Bind SELECTED_MODEL to process_single_image using partial
+func_with_model = partial(process_single_image, model_name=SELECTED_MODEL)
+
+# Define PySpark UDF
+run_ml_udf = udf(func_with_model, StringType())
 
 # Read metadata CSV
 df_input = spark.read.csv("data/input_metadata.csv", header=True, inferSchema=True)
