@@ -8,4 +8,3 @@ venv/
 .streamlit/
 
 # Database & Data files (adjust based on your needs)
-data/images/
