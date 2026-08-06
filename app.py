@@ -1,3 +1,4 @@
+import sys
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -163,7 +164,7 @@ with tab_batch:
 
         def run_pipeline():
             global process_complete
-            subprocess.run(["python", "pipeline.py"])
+            subprocess.run([sys.executable, "pipeline.py"])
             process_complete = True
 
         # 1. Run pipeline in background thread
