@@ -17,8 +17,6 @@ pip install kaggle pandas
 - Remove annotated folder
 - Remove nutrition_database.db
 
-### To download
-
 ### To create 1000 record csv file
 
 python helper/generate_csv.py

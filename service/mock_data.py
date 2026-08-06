@@ -191,6 +191,18 @@ NUTRITION_LOOKUP = {
         "nutrition_density": 88.0,
         "ingredients": ["fresh carrot"]
     },
+    "fries": {
+        "density": 0.5,
+        "cal_100g": 312.0,
+        "protein": 3.4,
+        "fat": 15.0,
+        "carbs": 41.0,
+        "sugars": 0.3,
+        "cholesterol": 0.0,
+        "dietary_fiber": 3.8,
+        "nutrition_density": 35.0,
+        "ingredients": ["potatoes", "vegetable oil", "salt"]
+    },
     "cashew": {
         "density": 0.6,
         "cal_100g": 553.0,

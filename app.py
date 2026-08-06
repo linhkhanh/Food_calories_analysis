@@ -10,8 +10,9 @@ import threading
 import time
 from datetime import datetime
 
-# Import model logic directly for instant processing
+# Import model logic and DB utils
 from service.model_service import process_single_image
+from service.db_utils import clear_processed_nutrition
 
 st.set_page_config(page_title="AI Food & Calorie Dashboard", layout="wide")
 st.title("🥗 Big Data Food Nutrition Analytics")
@@ -21,7 +22,6 @@ CSV_PATH = "data/input_metadata.csv"
 DB_PATH = "database/nutrition_data.db"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
-# Define display columns matching updated NUTRITION_LOOKUP fields
 DISPLAY_COLUMNS = [
     'food_item',
     'estimated_weight_g',
@@ -37,7 +37,33 @@ DISPLAY_COLUMNS = [
 ]
 
 # -------------------------------------------------------------
-# 1. INITIALIZE TAB STATE & CREATE TABS WITH KEY
+# MODEL SELECTION & AUTO-CLEAR CALLBACK
+# -------------------------------------------------------------
+MODEL_OPTIONS = ["best_1", "best_2", "best_3"]
+
+if "selected_model" not in st.session_state:
+    st.session_state.selected_model = "best_1"
+
+def on_model_change():
+    """Triggered automatically when user selects a different model."""
+    success = clear_processed_nutrition(DB_PATH)
+    new_model = st.session_state.selected_model
+    if success:
+        st.session_state.pyspark_info_msg = f"🔄 Switched to `{new_model}`. Table `processed_nutrition` was automatically cleared!"
+    else:
+        st.session_state.pyspark_info_msg = f"🔄 Switched to `{new_model}`."
+
+# Sidebar Model Selector
+st.sidebar.header("⚙️ Model Configuration")
+selected_model = st.sidebar.selectbox(
+    "Choose YOLO Model:",
+    options=MODEL_OPTIONS,
+    key="selected_model",
+    on_change=on_model_change
+)
+
+# -------------------------------------------------------------
+# TAB CONFIGURATION
 # -------------------------------------------------------------
 TAB_INSTANT = "⚡ Instant Photo Analyzer"
 TAB_BATCH = "📊 Batch Analytics Dashboard"
@@ -45,11 +71,10 @@ TAB_BATCH = "📊 Batch Analytics Dashboard"
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = TAB_INSTANT
 
-# Bind st.tabs to session state using the key parameter
 tab_instant, tab_batch = st.tabs([TAB_INSTANT, TAB_BATCH], key="active_tab")
 
 # ==========================================
-# SIDEBAR CONTROLS (Upload Form Only)
+# SIDEBAR CONTROLS (Upload Form)
 # ==========================================
 st.sidebar.header("📤 Add to Batch Pipeline")
 with st.sidebar.form("upload_form"):
@@ -80,6 +105,7 @@ if submit and uploaded_file is not None:
 # ==========================================
 with tab_instant:
     st.header("⚡ Instant Meal Analysis")
+    st.caption(f"Active Model: `{selected_model}`")
     st.write("Upload one or multiple photos to get immediate bounding boxes and nutritional breakdown.")
 
     col_up, col_param = st.columns([2, 1])
@@ -105,12 +131,16 @@ with tab_instant:
                 with open(temp_path, "wb") as f:
                     f.write(file.getbuffer())
                 
-                with st.spinner(f"Analyzing {file.name}..."):
-                    json_res = process_single_image(temp_path, plate_cm=plate_cm_instant)
+                with st.spinner(f"Analyzing {file.name} using {selected_model}..."):
+                    json_res = process_single_image(
+                        temp_path, 
+                        plate_cm=plate_cm_instant, 
+                        model_name=selected_model
+                    )
                     detected_items = json.loads(json_res)
                 
                 with st.container():
-                    st.subheader(f"📸 Results for: `{file.name}`")
+                    st.subheader(f"📸 Results for: `{file.name}` ({selected_model})")
                     c1, c2 = st.columns([1, 2])
                     
                     if detected_items:
@@ -148,15 +178,29 @@ with tab_instant:
 with tab_batch:
     st.header("📊 Batch Processing & Long-Term Analytics")
 
-    # Display persistent success message if available in session state
     if "pyspark_success_msg" in st.session_state:
         st.success(st.session_state.pyspark_success_msg)
-        del st.session_state.pyspark_success_msg  # Clear after displaying once
+        del st.session_state.pyspark_success_msg
 
-    # --- BATCH TRIGGER BUTTON & LOADER INSIDE TAB ---
-    col_btn, _ = st.columns([1, 2])
-    with col_btn:
-        run_batch = st.button("⚡ Run PySpark Batch Pipeline", type="primary")
+    if "pyspark_info_msg" in st.session_state:
+        st.info(st.session_state.pyspark_info_msg)
+        del st.session_state.pyspark_info_msg
+
+    col_run, col_clear, _ = st.columns([2, 1, 3])
+    
+    with col_run:
+        run_batch = st.button("⚡ Run PySpark Batch Pipeline", type="primary", use_container_width=True)
+    
+    with col_clear:
+        clear_data = st.button("🗑️ Clear Table Data", type="secondary", use_container_width=True)
+
+    if clear_data:
+        success = clear_processed_nutrition(DB_PATH)
+        if success:
+            st.session_state.pyspark_info_msg = "🗑️ Table `processed_nutrition` cleared successfully!"
+        else:
+            st.session_state.pyspark_info_msg = "⚠️ Database file or table not found."
+        st.rerun()
 
     if run_batch:
         process_complete = False
@@ -167,11 +211,9 @@ with tab_batch:
             subprocess.run([sys.executable, "pipeline.py"])
             process_complete = True
 
-        # 1. Run pipeline in background thread
         thread = threading.Thread(target=run_pipeline)
         thread.start()
 
-        # 2. Cute Icon Animation Loop inside Tab
         icons = ["🥗", "🍕", "🍜", "🥑", "🥐", "🍔", "🍣", "🍩", "🥞", "🍇"]
         placeholder = st.empty()
         i = 0
@@ -182,7 +224,7 @@ with tab_batch:
                 f"""
                 <div style="text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 12px; margin: 15px 0;">
                     <span style="font-size: 48px; display: inline-block;">{current_icon}</span>
-                    <p style="margin-top: 8px; font-weight: 600; color: #31333F; font-size: 16px;">Processing PySpark Batch Pipeline...</p>
+                    <p style="margin-top: 8px; font-weight: 600; color: #31333F; font-size: 16px;">Data is being processed... It takes 30s - 1 min</p>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -191,7 +233,7 @@ with tab_batch:
             i += 1
 
         thread.join()
-        placeholder.empty()  # Clear loader card
+        placeholder.empty()
         
         end_time = datetime.now()
         total_time = (end_time - start_time).total_seconds()
@@ -201,7 +243,6 @@ with tab_batch:
 
     st.markdown("---")
 
-    # --- DATABASE RESULTS ---
     if os.path.exists(DB_PATH):
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query("SELECT * FROM processed_nutrition", conn)
