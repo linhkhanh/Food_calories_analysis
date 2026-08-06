@@ -1,5 +1,9 @@
 import sqlite3
 import os
+import sys
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, explode, from_json, col
 from pyspark.sql.types import StringType, StructType, StructField, FloatType, ArrayType
