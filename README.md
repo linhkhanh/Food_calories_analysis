@@ -1,13 +1,16 @@
 ### activate and deactivate virtual env
 
 `source ~/tf-env/bin/activate`
+
+To deactivate
 `deactivate`
 
 ### run install
 
-`pip install ultralytics pyspark streamlit pandas opencv-python-headless`
-`pip install roboflow`
-`pip install kaggle pandas`
+1. `pip install ultralytics pyspark streamlit pandas opencv-python-headless`
+
+2. `pip install roboflow`
+3. `pip install kaggle pandas`
 
 ### before running ( if ):
 
