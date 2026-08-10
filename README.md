@@ -1,13 +1,13 @@
-### activate virtual env
+### activate and deactivate virtual env
 
-source ~/tf-env/bin/activate
-deactivate
+`source ~/tf-env/bin/activate`
+`deactivate`
 
 ### run install
 
-pip install ultralytics pyspark streamlit pandas opencv-python-headless
-pip install roboflow
-pip install kaggle pandas
+`pip install ultralytics pyspark streamlit pandas opencv-python-headless`
+`pip install roboflow`
+`pip install kaggle pandas`
 
 ### before running ( if ):
 
@@ -19,22 +19,22 @@ pip install kaggle pandas
 
 ### Create 1000 record csv file to test batch processing
 
-python helper/generate_csv.py
+`python helper/generate_csv.py`
 
 ## Step 2 (optional):
 
 ### Create SQLlite database
 
-python pipeline.py
+`python pipeline.py`
 
 This step will create a annotation folder with images having bounding box on photo
 Then create necessary table and insert data to db
 
-# Step 3:
+## Step 3:
 
 ### To Run app
 
-streamlit run app.py
+`streamlit run app.py`
 
 If do this step without step 2, to test batch processing, please choose tab Batch Analytic Dashboard --> click Run Pyspark Batch pipeline Button -> wait for data Processing (it take around 1 - 3 mins)
 
