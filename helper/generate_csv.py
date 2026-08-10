@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 IMAGE_DIR = "data/images"
 CSV_PATH = "data/input_metadata.csv"
-TARGET_COUNT = 15
+TARGET_COUNT = 1000
 
 # Scan folder for image extensions
 supported_exts = (".png", ".jpg", ".jpeg")
